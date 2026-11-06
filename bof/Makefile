@@ -24,13 +24,25 @@ X86_OBJS := $(SRCS:.c=.x86.o)
 HEADERS := bof_config.h dfr.h udc2.h crypto.h stun.h schannel.h msteams.h turn.h proto.h
 
 # Use the generated config when present; otherwise fall back to the
-# template (with placeholder credentials) so the tree builds out of the
+# template (with placeholder credentials) so the tree compiles out of the
 # box. `turn-udc2-server --emit-bof-config bof/bof_config.h` wins.
 bof_config.h: bof_config.h.example
 	cp $< $@
 	@echo "note: using template bof_config.h (placeholders); run turn-udc2-server --emit-bof-config bof/bof_config.h for live values"
 
-all: turn_udc2.x64.o turn_udc2.x86.o
+# A BOF built from the template cannot check in: its peer is 0.0.0.0:0,
+# which parse_peer rejects, so the payload fails silently on the target.
+# Fail the build instead. BOF_ALLOW_PLACEHOLDER=1 overrides for
+# compile-only checks without a live server.
+configcheck: bof_config.h
+	@if grep -qE 'REPLACE_WITH_TURN_USERNAME|0\.0\.0\.0:0' bof_config.h && [ "$(BOF_ALLOW_PLACEHOLDER)" != "1" ]; then \
+		echo "ERROR: bof_config.h still has placeholder values; a BOF built from it cannot check in."; \
+		echo "  Start turn-udc2-server with --emit-bof-config bof/bof_config.h (or fill it in), then rebuild."; \
+		echo "  Or build with BOF_ALLOW_PLACEHOLDER=1 for a compile-only check."; \
+		exit 1; \
+	fi
+
+all: configcheck turn_udc2.x64.o turn_udc2.x86.o
 
 # Windows x64 test harness: runs the exact BOF objects outside Beacon
 # (mini BOF loader + console main). Link with the CRT like a normal exe;
@@ -43,7 +55,7 @@ turn_udc2_test.exe: debug/loader.c debug/main.c $(DEBUG_OBJS)
 	$(CC_X64) -O2 -o $@ debug/loader.c debug/main.c $(DEBUG_OBJS)
 	@echo "== $@ built (copy to a Windows x64 box and run against a live server + fakets) =="
 
-debug: turn_udc2_test.exe
+debug: configcheck turn_udc2_test.exe
 
 %.debug.x64.o: %.c $(HEADERS)
 	$(CC_X64) $(CFLAGS) -DTURN_DEBUG -c -o $@ $<
@@ -65,4 +77,4 @@ turn_udc2.x86.o: $(X86_OBJS)
 clean:
 	rm -f *.x64.o *.x86.o *.debug.x64.o turn_udc2.x64.o turn_udc2.x86.o bof_config.h turn_udc2_test.exe
 
-.PHONY: all clean debug
+.PHONY: all clean debug configcheck

@@ -50,6 +50,48 @@ long bof_atoi(const char* s) {
     return neg ? -v : v;
 }
 
+#if defined(__i386__)
+// On i386 GCC emits calls to libgcc's __udivdi3/__umoddi3 for 64-bit
+// division and modulo — even by constants, because at -Os the libcall is
+// smaller than the inline sequence. Cobalt Strike's UDC2 object loader
+// cannot resolve libgcc symbols (one undefined ___udivdi3 fails the whole
+// listener), while the debug test exe links libgcc normally and masks it.
+// x64 divides natively, so these compile to nothing there.
+static unsigned long long udivmod64(unsigned long long n, unsigned long long d,
+                                    unsigned long long* rem) {
+    unsigned long long q = 0, bit = 1;
+
+    if (d == 0) { // divide by zero: return 0 rather than crash the payload
+        if (rem) *rem = n;
+        return 0;
+    }
+    while (!(d & 0x8000000000000000ULL) && d < n) {
+        d <<= 1;
+        bit <<= 1;
+    }
+    while (bit) {
+        if (n >= d) {
+            n -= d;
+            q |= bit;
+        }
+        bit >>= 1;
+        d >>= 1;
+    }
+    if (rem) *rem = n;
+    return q;
+}
+
+unsigned long long __udivdi3(unsigned long long n, unsigned long long d) {
+    return udivmod64(n, d, 0);
+}
+
+unsigned long long __umoddi3(unsigned long long n, unsigned long long d) {
+    unsigned long long r;
+    udivmod64(n, d, &r);
+    return r;
+}
+#endif
+
 int crypto_md5(unsigned char* out, const unsigned char* data, unsigned long len) {
     BCRYPT_ALG_HANDLE alg = NULL;
     BCRYPT_HASH_HANDLE hash = NULL;
