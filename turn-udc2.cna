@@ -1,0 +1,69 @@
+# turn-udc2.cna — Aggressor helpers for the TURN UDC2 channel.
+#
+# Registers two commands:
+#
+#   setup_turn_udc2    create the UDC2 listeners (x64 + x86)
+#   cleanup_turn_udc2  remove them
+#
+# Before using:
+#   1. Build the BOF:            make -C bof   (after --emit-bof-config)
+#   2. Start the relay server:   turn-udc2-server --ts-port <port below>
+#   3. Start a team server with this script loaded, then run
+#      setup_turn_udc2 from the script console.
+#
+# Listener settings:
+#   - Both listeners bind 0.0.0.0 (localonly => "false"), so the relay
+#     may run on a different host than the team server.
+#   - x64 and x86 must use different team server ports. turn-udc2-server
+#     relays to exactly one port (--ts-port), so run one relay instance
+#     per architecture you generate payloads for, each pointing at its
+#     listener's port (and building that arch's BOF from its own
+#     bof_config.h).
+#   - `beacons` restricts which hosts may open UDC2 sessions on the
+#     listener. Since the listeners are on 0.0.0.0, set it to the
+#     address(es) your turn-udc2-server runs on — not just 127.0.0.1
+#     when the relay is on another host, or connections will be accepted
+#     and then dropped.
+
+$UDC2_X64_PORT = 2222;           # team server port for the x64 listener
+$UDC2_X86_PORT = 2223;           # team server port for the x86 listener
+
+sub setup_turn_udc2 {
+    listener_create_ext("turn-udc2-x64", "windows/beacon_udc2",
+        %(beacons => "0.0.0.0", port => $UDC2_X64_PORT, localonly => "false",
+          profile => "", bof => script_resource("bof/turn_udc2.x64.o")));
+
+    listener_create_ext("turn-udc2-x86", "windows/beacon_udc2",
+        %(beacons => "0.0.0.0", port => $UDC2_X86_PORT, localonly => "false",
+          profile => "", bof => script_resource("bof/turn_udc2.x86.o")));
+
+    println("TURN UDC2 listeners created on 0.0.0.0 (x64 port " . $UDC2_X64_PORT . ", x86 port " . $UDC2_X86_PORT . ")");
+    println("Start the relay: turn-udc2-server --ts-addr <this host> --ts-port <port for your payload arch>")
+}
+
+sub cleanup_turn_udc2 {
+    listener_delete("turn-udc2-x64");
+    listener_delete("turn-udc2-x86");
+    println("TURN UDC2 listeners removed.")
+}
+
+
+sub confirm_start {
+  prompt_confirm("Are you sure you want to start the TURN listeners?\n\nYou only need to do this action once.", "TURN UDC2", {
+    openScriptConsole();
+    setup_turn_udc2();
+  })
+}
+
+sub confirm_stop {
+  prompt_confirm("Are you sure you want to stop the TURN listeners?", "TURN UDC2", {
+    openScriptConsole();
+    cleanup_turn_udc2();
+  })
+}
+
+menubar("TURN UDC2", "menu");
+popup menu {
+  item "Start TURN UDC2 Listeners" { confirm_start(); }
+  item "Stop TURN UDC2 Listeners" { confirm_stop(); }
+}
