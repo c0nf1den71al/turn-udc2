@@ -1,4 +1,4 @@
-module github.com/jamiepegg/turn-c2
+module github.com/c0nf1den71al/turn-udc2
 
 go 1.24
 

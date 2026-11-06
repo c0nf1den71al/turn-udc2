@@ -22,9 +22,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/jamiepegg/turn-c2/internal/msteams"
-	"github.com/jamiepegg/turn-c2/internal/proto"
-	"github.com/jamiepegg/turn-c2/internal/turnc"
+	"github.com/c0nf1den71al/turn-udc2/internal/msteams"
+	"github.com/c0nf1den71al/turn-udc2/internal/proto"
+	"github.com/c0nf1den71al/turn-udc2/internal/turnc"
 )
 
 func main() {

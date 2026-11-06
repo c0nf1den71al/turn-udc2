@@ -22,8 +22,8 @@ import (
 	"github.com/pion/transport/v2/stdnet"
 	"github.com/pion/turn/v2"
 
-	"github.com/jamiepegg/turn-c2/internal/proto"
-	"github.com/jamiepegg/turn-c2/internal/turnc"
+	"github.com/c0nf1den71al/turn-udc2/internal/proto"
+	"github.com/c0nf1den71al/turn-udc2/internal/turnc"
 )
 
 const (

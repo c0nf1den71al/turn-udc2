@@ -17,8 +17,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/jamiepegg/turn-c2/internal/msteams"
-	"github.com/jamiepegg/turn-c2/internal/udc2"
+	"github.com/c0nf1den71al/turn-udc2/internal/msteams"
+	"github.com/c0nf1den71al/turn-udc2/internal/udc2"
 )
 
 var version = "dev"

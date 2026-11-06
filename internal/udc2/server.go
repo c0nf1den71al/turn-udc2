@@ -16,8 +16,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jamiepegg/turn-c2/internal/proto"
-	"github.com/jamiepegg/turn-c2/internal/turnc"
+	"github.com/c0nf1den71al/turn-udc2/internal/proto"
+	"github.com/c0nf1den71al/turn-udc2/internal/turnc"
 )
 
 // Config configures the UDC2 server.
