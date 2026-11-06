@@ -1,6 +1,6 @@
 module github.com/c0nf1den71al/turn-udc2
 
-go 1.24
+go 1.24.13
 
 require (
 	github.com/andybalholm/brotli v1.1.1
